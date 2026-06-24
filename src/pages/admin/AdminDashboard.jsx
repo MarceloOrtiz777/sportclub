@@ -1,4 +1,137 @@
+import { useState, useEffect } from "react";
+
+const API = "http://localhost:3000";
+
+function getToken() {
+return localStorage.getItem("token");
+}
+
 function AdminDashboard() {
+const [usuarios, setUsuarios] = useState([]);
+const [showModal, setShowModal] = useState(false);
+const [editando, setEditando] = useState(null);
+const [feedback, setFeedback] = useState({ msg: "", tipo: "" });
+
+const [form, setForm] = useState({
+    full_name: "", email: "", password: "", confirm: "", role: "user"
+});
+const [errores, setErrores] = useState({});
+
+useEffect(() => {
+    cargarUsuarios();
+}, []);
+
+async function cargarUsuarios() {
+    try {
+    const res = await fetch(`${API}/api/users`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    const data = await res.json();
+    if (data.ok) setUsuarios(data.data);
+    } catch (e) {
+    mostrarFeedback("Error al cargar usuarios", "danger");
+    }
+}
+
+function mostrarFeedback(msg, tipo) {
+    setFeedback({ msg, tipo });
+    setTimeout(() => setFeedback({ msg: "", tipo: "" }), 3000);
+}
+
+function abrirModalCrear() {
+    setEditando(null);
+    setForm({ full_name: "", email: "", password: "", confirm: "", role: "user" });
+    setErrores({});
+    setShowModal(true);
+}
+
+async function abrirModalEditar(id) {
+    try {
+    const res = await fetch(`${API}/api/users/${id}`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    const data = await res.json();
+    const u = data.data;
+    setEditando(id);
+    setForm({ full_name: u.full_name, email: u.email, password: "", confirm: "", role: u.role });
+    setErrores({});
+    setShowModal(true);
+    } catch (e) {
+    mostrarFeedback("Error al cargar usuario", "danger");
+    }
+}
+
+function validar() {
+    const e = {};
+    if (!form.full_name) e.full_name = "El nombre es obligatorio";
+    if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Email inválido";
+    if (!editando && form.password.length < 8) e.password = "Mínimo 8 caracteres";
+    if (!editando && form.password !== form.confirm) e.confirm = "Las contraseñas no coinciden";
+    return e;
+}
+
+async function guardarUsuario() {
+    const e = validar();
+    if (Object.keys(e).length > 0) { setErrores(e); return; }
+    setErrores({});
+
+    try {
+    let res;
+    if (editando) {
+        res = await fetch(`${API}/api/users/${editando}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ full_name: form.full_name, email: form.email, role: form.role })
+        });
+    } else {
+        res = await fetch(`${API}/api/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ full_name: form.full_name, email: form.email, password: form.password, role: form.role, must_change_password: false })
+        });
+    }
+    const data = await res.json();
+    if (data.ok) {
+        setShowModal(false);
+        mostrarFeedback(editando ? "Usuario actualizado" : "Usuario creado", "success");
+        cargarUsuarios();
+    } else {
+        mostrarFeedback(data.message || "Error al guardar", "danger");
+    }
+    } catch (e) {
+    mostrarFeedback("Error al conectar con el servidor", "danger");
+    }
+}
+
+async function eliminarUsuario(id) {
+    if (!window.confirm("¿Eliminar este usuario?")) return;
+    try {
+    const res = await fetch(`${API}/api/users/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    const data = await res.json();
+    if (data.ok) {
+        mostrarFeedback("Usuario eliminado", "success");
+        cargarUsuarios();
+    } else {
+        mostrarFeedback(data.message || "Error al eliminar", "danger");
+    }
+    } catch (e) {
+    mostrarFeedback("Error al conectar con el servidor", "danger");
+    }
+}
+
+function formatFecha(fecha) {
+    if (!fecha) return "–";
+    return new Date(fecha).toLocaleDateString("es-CL");
+}
+
+function badgeRol(rol) {
+    const colores = { admin: "danger", coach: "primary", user: "success" };
+    return <span className={`badge bg-${colores[rol] || "secondary"}`}>{rol}</span>;
+}
+
 return (
     <div style={{ padding: "32px", background: "#fff5f5", minHeight: "100vh" }}>
 
@@ -12,69 +145,100 @@ return (
         </a>
     </div>
 
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "20px" }}>
-        {[
-        { valor: "524", label: "Total de usuarios" },
-        { valor: "12", label: "Coaches activos" },
-        { valor: "47", label: "Clases esta semana" },
-        ].map((s, i) => (
-        <div key={i} style={{ background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "24px", textAlign: "center" }}>
-            <div style={{ fontSize: "2.4rem", fontWeight: "700", color: "#7C2D12" }}>{s.valor}</div>
-            <div style={{ fontSize: "0.82rem", color: "#6B7280", marginTop: "4px" }}>{s.label}</div>
-        </div>
-        ))}
-    </div>
-
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
-        <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "24px", display: "flex", alignItems: "center", gap: "16px" }}>
-        <div style={{ fontSize: "2rem" }}>🟢</div>
-        <div>
-            <div style={{ fontWeight: "700", fontSize: "0.95rem" }}>Usuarios activos</div>
-            <div style={{ fontSize: "0.82rem", color: "#6B7280" }}>489 de 524 registrados</div>
-        </div>
-        </div>
-        <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "24px", display: "flex", alignItems: "center", gap: "16px" }}>
-        <div style={{ fontSize: "2rem" }}>🏋️</div>
-        <div>
-            <div style={{ fontWeight: "700", fontSize: "0.95rem" }}>Clases del día</div>
-            <div style={{ fontSize: "0.82rem", color: "#6B7280" }}>8 clases programadas hoy</div>
-        </div>
-        </div>
-    </div>
+    {feedback.msg && (
+        <div className={`alert alert-${feedback.tipo}`}>{feedback.msg}</div>
+    )}
 
     <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "24px" }}>
-        <h2 style={{ fontSize: "1rem", fontWeight: "700", marginBottom: "14px" }}>Gestión de usuarios</h2>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-            <tr style={{ background: "#7C2D12" }}>
-            <th style={{ padding: "11px 14px", textAlign: "left", fontSize: "0.78rem", color: "white", textTransform: "uppercase" }}>Nombre</th>
-            <th style={{ padding: "11px 14px", textAlign: "left", fontSize: "0.78rem", color: "white", textTransform: "uppercase" }}>Correo</th>
-            <th style={{ padding: "11px 14px", textAlign: "left", fontSize: "0.78rem", color: "white", textTransform: "uppercase" }}>Rol</th>
-            <th style={{ padding: "11px 14px", textAlign: "left", fontSize: "0.78rem", color: "white", textTransform: "uppercase" }}>Estado</th>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <div>
+            <h2 style={{ fontSize: "1rem", fontWeight: "700", margin: 0 }}>Gestión de usuarios</h2>
+            <p style={{ fontSize: "0.82rem", color: "#6B7280", margin: 0 }}>Administra los usuarios del sistema</p>
+        </div>
+        <button className="btn btn-success" onClick={abrirModalCrear}>+ Nuevo Usuario</button>
+        </div>
+
+        <table className="table table-bordered">
+        <thead style={{ background: "#7C2D12" }}>
+            <tr>
+            <th style={{ color: "white" }}>ID</th>
+            <th style={{ color: "white" }}>Nombre</th>
+            <th style={{ color: "white" }}>Email</th>
+            <th style={{ color: "white" }}>Rol</th>
+            <th style={{ color: "white" }}>Fecha registro</th>
+            <th style={{ color: "white" }}>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            {[
-            { nombre: "Admin SportClub", correo: "admin@sportclub.cl", rol: "Admin", estado: "Activo" },
-            { nombre: "Rodrigo Soto", correo: "rsoto@sportclub.cl", rol: "Coach", estado: "Activo" },
-            { nombre: "Ana Pérez", correo: "aperez@sportclub.cl", rol: "Coach", estado: "Activo" },
-            { nombre: "Carlos Muñoz", correo: "cmunoz@correo.com", rol: "Usuario", estado: "Activo" },
-            { nombre: "Valentina Rojas", correo: "vrojas@correo.com", rol: "Usuario", estado: "Activo" },
-            { nombre: "Martín Álvarez", correo: "malvarez@correo.com", rol: "Usuario", estado: "Inactivo" },
-            ].map((u, i) => (
-            <tr key={i} style={{ borderBottom: "1px solid #E5E7EB" }}>
-                <td style={{ padding: "11px 14px", fontSize: "0.88rem" }}>{u.nombre}</td>
-                <td style={{ padding: "11px 14px", fontSize: "0.88rem" }}>{u.correo}</td>
-                <td style={{ padding: "11px 14px", fontSize: "0.88rem" }}>{u.rol}</td>
-                <td style={{ padding: "11px 14px", fontSize: "0.88rem" }}>{u.estado}</td>
+            {usuarios.map(u => (
+            <tr key={u.id}>
+                <td>{u.id}</td>
+                <td>{u.full_name}</td>
+                <td>{u.email}</td>
+                <td>{badgeRol(u.role)}</td>
+                <td>{formatFecha(u.created_at)}</td>
+                <td style={{ display: "flex", gap: "6px" }}>
+                <button className="btn btn-primary btn-sm" onClick={() => abrirModalEditar(u.id)}>Editar</button>
+                <button className="btn btn-danger btn-sm" onClick={() => eliminarUsuario(u.id)}>Eliminar</button>
+                </td>
             </tr>
             ))}
         </tbody>
         </table>
     </div>
 
+      {/* MODAL */}
+    {showModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+        <div style={{ background: "white", borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "480px" }}>
+            <h3 style={{ marginBottom: "20px" }}>{editando ? "Editar Usuario" : "Nuevo Usuario"}</h3>
+
+            <div className="mb-3">
+            <label className="form-label fw-semibold">Nombre completo</label>
+            <input className={`form-control ${errores.full_name ? "is-invalid" : ""}`} value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} />
+            {errores.full_name && <div className="invalid-feedback">{errores.full_name}</div>}
+            </div>
+
+            <div className="mb-3">
+            <label className="form-label fw-semibold">Email</label>
+            <input className={`form-control ${errores.email ? "is-invalid" : ""}`} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            {errores.email && <div className="invalid-feedback">{errores.email}</div>}
+            </div>
+
+            <div className="mb-3">
+            <label className="form-label fw-semibold">Rol</label>
+            <select className="form-select" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                <option value="user">Usuario</option>
+                <option value="coach">Coach</option>
+                <option value="admin">Admin</option>
+            </select>
+            </div>
+
+            {!editando && (
+            <>
+                <div className="mb-3">
+                <label className="form-label fw-semibold">Contraseña</label>
+                <input type="password" className={`form-control ${errores.password ? "is-invalid" : ""}`} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+                {errores.password && <div className="invalid-feedback">{errores.password}</div>}
+                </div>
+                <div className="mb-3">
+                <label className="form-label fw-semibold">Confirmar contraseña</label>
+                <input type="password" className={`form-control ${errores.confirm ? "is-invalid" : ""}`} value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
+                {errores.confirm && <div className="invalid-feedback">{errores.confirm}</div>}
+                </div>
+            </>
+            )}
+
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "8px" }}>
+            <button className="btn btn-danger" onClick={() => setShowModal(false)}>Cancelar</button>
+            <button className="btn btn-success" onClick={guardarUsuario}>Guardar</button>
+            </div>
+        </div>
+        </div>
+    )}
+
     </div>
-)
+);
 }
 
-export default AdminDashboard
+export default AdminDashboard;

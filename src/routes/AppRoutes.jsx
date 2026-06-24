@@ -5,6 +5,9 @@ import Register from "../pages/Register"
 import UserDashboard from "../pages/user/UserDashboard"
 import CoachDashboard from "../pages/coach/CoachDashboard"
 import AdminDashboard from "../pages/admin/AdminDashboard"
+import Reportes from "../pages/admin/Reportes"
+import Configuracion from "../pages/admin/Configuracion"
+import Inicio from "../pages/admin/Inicio"
 import UserLayout from "../layouts/UserLayout"
 import CoachLayout from "../layouts/CoachLayout"
 import AdminLayout from "../layouts/AdminLayout"
@@ -24,6 +27,9 @@ return (
         </Route>
         <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="inicio" element={<Inicio />} />
+        <Route path="reportes" element={<Reportes />} />
+        <Route path="configuracion" element={<Configuracion />} />
         </Route>
     </Routes>
     </BrowserRouter>

@@ -9,10 +9,10 @@ return (
         </div>
         <nav style={{ flex: 1, padding: "20px 12px" }}>
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-            <li><Link to="/admin/dashboard" style={{ display: "block", padding: "10px 12px", borderRadius: "8px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.88rem" }}>Inicio</Link></li>
+            <li><Link to="/admin/inicio" style={{ display: "block", padding: "10px 12px", borderRadius: "8px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.88rem" }}>Inicio</Link></li>
             <li><Link to="/admin/dashboard" style={{ display: "block", padding: "10px 12px", borderRadius: "8px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.88rem" }}>Usuarios</Link></li>
-            <li><Link to="/admin/dashboard" style={{ display: "block", padding: "10px 12px", borderRadius: "8px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.88rem" }}>Reportes</Link></li>
-            <li><Link to="/admin/dashboard" style={{ display: "block", padding: "10px 12px", borderRadius: "8px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.88rem" }}>Configuración</Link></li>
+            <li><Link to="/admin/reportes" style={{ display: "block", padding: "10px 12px", borderRadius: "8px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.88rem" }}>Reportes</Link></li>
+            <li><Link to="/admin/configuracion" style={{ display: "block", padding: "10px 12px", borderRadius: "8px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "0.88rem" }}>Configuración</Link></li>
         </ul>
         </nav>
         <div style={{ padding: "16px 12px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
