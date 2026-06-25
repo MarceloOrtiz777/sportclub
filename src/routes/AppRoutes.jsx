@@ -1,3 +1,4 @@
+import Deportes from "../pages/admin/Deportes"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import Home from "../pages/Home"
 import Login from "../pages/Login"
@@ -30,6 +31,7 @@ return (
         <Route path="inicio" element={<Inicio />} />
         <Route path="reportes" element={<Reportes />} />
         <Route path="configuracion" element={<Configuracion />} />
+        <Route path="deportes" element={<Deportes />} />
         </Route>
     </Routes>
     </BrowserRouter>
